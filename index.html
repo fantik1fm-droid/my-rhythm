@@ -321,6 +321,19 @@ a{color:var(--purple);text-decoration:none;border-bottom:1px dashed currentColor
 /* Детализация дня */
 .detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
 .detail-row:last-child{border-bottom:0}
+.danger-zone{background:linear-gradient(145deg,#ffe0e0,#ffd0d0);color:#5a2a2a}
+:root.dark .danger-zone{background:linear-gradient(145deg,#4a2030,#3a1828);color:#ffd0d0}
+.err-panel{background:#ffe0e0;color:#a23a3a}
+:root.dark .err-panel{background:#4a2030;color:#ffb3b3}
+.datenav{display:flex;align-items:center;gap:6px}
+.datenav button{padding:8px 12px}
+@media(min-width:901px){header{padding-right:64px}}
+.goal-item{padding:12px 0;border-bottom:1px solid var(--line)}
+.goal-item:last-child{border-bottom:0}
+.goal-item .row{justify-content:space-between}
+.question{padding:18px;border-radius:18px;background:var(--grad-side);font-size:16px;font-weight:600;margin:10px 0}
+body.no-anim .hearts,body.no-anim .stars{display:none}
+@media(prefers-reduced-motion:reduce){.hearts,.stars{display:none}}
 .detail-row b{font-family:var(--font-head);font-weight:700}
 @media(max-width:900px){
   aside{position:sticky;top:0;width:auto;height:auto;padding:14px;backdrop-filter:none;z-index:20}
@@ -328,8 +341,14 @@ a{color:var(--purple);text-decoration:none;border-bottom:1px dashed currentColor
   nav button{white-space:nowrap;width:auto;padding:9px 13px;font-size:12.5px}
   nav button .nav-icon{font-size:15px;width:auto}
   nav hr{display:none}
-  .sub{display:none}
+  .sub,.sidecard,.dedic,aside>.muted{display:none}
+  .brand{font-size:22px}
+  .user-profile{margin:8px 0;padding:6px 10px}
   main{margin:0;padding:16px}
+  header .controls{width:100%}
+  .datenav{flex:1}
+  .datenav input{flex:1;min-width:0}
+  .sync-badge{display:none}
   .cards,.grid-3{grid-template-columns:repeat(2,1fr);gap:10px}
   .card{padding:16px}
   .card b{font-size:26px}
@@ -372,28 +391,28 @@ a{color:var(--purple);text-decoration:none;border-bottom:1px dashed currentColor
     </div>
     <nav id="nav"></nav>
     <div class="sidecard"><b id="sideQuoteTitle">Ты справишься ♡</b><span id="sideQuote">Один шаг, один стакан воды, одна маленькая победа — и день уже удался.</span></div>
-    <div class="muted" style="margin-top:14px;font-size:11px">Версия 8.0</div>
+    <div class="muted" style="margin-top:14px;font-size:11px">Версия 9.0</div>
   </aside>
   <main>
     <header>
       <div><div class="muted" id="datelabel"></div><h1 id="title"></h1></div>
       <div class="row controls">
-        <input type="date" id="date">
+        <div class="datenav"><button onclick="shiftDate(-1)" title="Предыдущий день">‹</button><input type="date" id="date"><button onclick="shiftDate(1)" title="Следующий день">›</button><button id="todayBtn" class="small" onclick="goToday()">Сегодня</button></div>
         <span class="sync-badge" id="syncBadge"><span class="dot" id="syncBadgeDot"></span><span id="syncBadgeText">Синхронизировано</span></span>
         <button onclick="logout()" title="Выйти">🚪</button>
       </div>
     </header>
     <div id="view"></div>
-    <div class="footer">МОЙ РИТМ v8.0 · Сделано с любовью ♡</div>
+    <div class="footer">МОЙ РИТМ v9.0 · Сделано с любовью ♡</div>
   </main>
 </div>
 
 <div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="modal-box" id="modalBox"></div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* ============================================================
-   МОЙ РИТМ v8.0
+   МОЙ РИТМ v9.0
    ============================================================ */
 const SUPABASE_URL='https://kmsbtmkqbllacfnerpya.supabase.co';
 const SUPABASE_KEY='sb_publishable_wnodCkT4BDMpGmqiH9Dg0Q_24qd7Cx1';
@@ -414,6 +433,7 @@ const state={
   fontMain:localStorage.getItem('mr-font-main')||'Comfortaa',
   fontHead:localStorage.getItem('mr-font-head')||'Cormorant Garamond',
   fontHand:localStorage.getItem('mr-font-hand')||'Caveat',
+  anim:localStorage.getItem('mr-anim')!=='off',
   online:false
 };
 
@@ -437,12 +457,16 @@ const icons={
 const TAGS={work:{label:'Работа',cls:'tag-work'},home:{label:'Дом',cls:'tag-home'},health:{label:'Здоровье',cls:'tag-health'},study:{label:'Учёба',cls:'tag-study'},money:{label:'Деньги',cls:'tag-money'},other:{label:'Другое',cls:'tag-other'}};
 const QUOTES=[['Ты справишься ♡','Один шаг, один стакан воды, одна маленькая победа — и день уже удался.'],['Маленькие шаги ✦','Не обязательно делать всё. Достаточно сделать чуть-чуть — но сегодня.'],['Мягко и в своём ритме ♡','Прогресс важнее идеала. Ты уже молодец, что здесь.'],['Забота — это красиво ✿','Отдых тоже часть плана. Разреши себе выдохнуть.'],['Вдвоём теплее ♡','Мы команда. Даже если один устал — второй поддержит.'],['Финансы — это забота ⚘','Каждая копейка под контролем = спокойный сон.'],['Обнимаю ♡','Если сегодня тяжело — просто будь. Этого достаточно.'],['Наша маленькая вселенная ✧','Здесь только мы. И это самое лучшее место.']];
 const COMPLIMENTS=['Ты — моё самое любимое «сегодня» 💜','С тобой даже понедельник уютный ♡','Твоя улыбка лечит лучше любого чая ✨','Ты самая красивая, даже когда сонная 🌸','Мне повезло больше всех на свете 🍀','Твои объятия — моё любимое место 🫂','Ты умнее, чем думаешь 💪💜','Спасибо, что ты есть. Правда 🌷','Мне нравится, как ты смеёшься 🥰','Ты — причина моих глупых улыбок 😊','Каждый день с тобой — маленький праздник 🎀','Ты моя самая лучшая привычка ♡'];
-const QUIZ_Q=[{q:'Сколько дней в феврале в високосный год?',a:29},{q:'Сколько сердец у осьминога?',a:3},{q:'Сколько минут в сутках?',a:1440},{q:'Сколько цветов в радуге?',a:7},{q:'Сколько костей в теле взрослого человека?',a:206},{q:'Сколько струн у классической гитары?',a:6},{q:'Сколько лапок у паука?',a:8},{q:'Сколько букв в русском алфавите?',a:33}];
+const TALK_Q=['О чём ты мечтаешь в этом году?','Какой момент этой недели был самым тёплым?','Куда бы ты поехал(а) с нами прямо завтра?','Что я могу сделать, чтобы твой день стал легче?','Какую привычку нам стоит завести вместе?','Твоё самое любимое наше воспоминание?','Чему ты научился(-ась) за последний месяц?','Какой идеальный выходной ты себе представляешь?','За что ты сегодня благодарен(-на)?','Что нас рассмешило больше всего за последнее время?','Какую новую традицию нам придумать?','Что бы ты хотел(а) попробовать впервые вместе?','Какая песня у тебя ассоциируется с нами?','О чём ты давно хотел(а) поговорить?','Какой маленький подарок тебя бы порадовал?','Где мы будем через 5 лет?'];
 
 const $=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=id=>Number($(id).value)||0;
 function todayStr(){const d=new Date();return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function ymd(d){return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function addDays(s,n){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)}
+function payDateIn(y,m,day){const last=new Date(y,m+1,0).getDate();return ymd(new Date(y,m,Math.min(day,last),12))}
+function rub(x){return Math.round(Number(x)||0).toLocaleString('ru-RU')+' ₽'}
 function daysUntil(d){return Math.floor((new Date(d+'T12:00:00')-new Date(todayStr()+'T12:00:00'))/864e5)}
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),500)},2400)}
 function confetti(){const box=document.createElement('div');box.className='confetti';document.body.appendChild(box);const colors=['#b8a1ed','#e8a3c6','#f4c06f','#8fcfb0','#f0a8c8','#a1c8ed'];for(let i=0;i<80;i++){const c=document.createElement('i');c.style.left=Math.random()*100+'vw';c.style.background=colors[Math.floor(Math.random()*colors.length)];c.style.borderRadius=Math.random()>.5?'50%':'2px';c.style.animationDuration=(1.8+Math.random()*1.5)+'s';c.style.animationDelay=Math.random()*.4+'s';box.appendChild(c)}setTimeout(()=>box.remove(),4200)}
@@ -451,6 +475,7 @@ function spawnHearts(){const box=$('hearts');if(!box)return;const emoji=['💜',
 function spawnStars(){const box=$('stars');if(!box)return;const emoji=['✧','✦','✩','✫','⋆'];setInterval(()=>{if(document.hidden||box.children.length>15)return;const h=document.createElement('i');h.textContent=emoji[Math.floor(Math.random()*emoji.length)];h.style.left=Math.random()*100+'vw';h.style.fontSize=(8+Math.random()*14)+'px';h.style.animationDuration=(20+Math.random()*20)+'s';box.appendChild(h);setTimeout(()=>h.remove(),42000)},3600)}
 function setSyncStatus(s,text){const dot=$('syncBadgeDot'),txt=$('syncBadgeText'),sideDot=$('syncDot'),sideTxt=$('syncText');if(dot){dot.className='dot '+(s==='ok'?'on':s==='syncing'?'on':'off');dot.style.background=s==='ok'?'#8fcfb0':s==='syncing'?'#f4c06f':'#c2a3ad'}if(txt)txt.textContent=text;if(sideDot){sideDot.className='sync-dot '+(s==='ok'?'':s==='syncing'?'syncing':'off')}if(sideTxt)sideTxt.textContent=s==='ok'?'Онлайн':s==='syncing'?'Синхронизация…':'Офлайн'}
 function closeModal(){$('modal').classList.remove('show')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 function openModal(html){$('modalBox').innerHTML=html;$('modal').classList.add('show')}
 
 /* ============ ТЕМА / ПАЛИТРА / ШРИФТЫ ============ */
@@ -476,6 +501,7 @@ function applyTheme(){
   document.documentElement.style.setProperty('--font-hand',`'${state.fontHand}',cursive`);
   const el=$('themeIcon');if(el)el.textContent=state.theme==='dark'?'☀':'🌙';
 }
+function toggleAnim(){state.anim=!state.anim;localStorage.setItem('mr-anim',state.anim?'on':'off');document.body.classList.toggle('no-anim',!state.anim);render();toast(state.anim?'✨ Анимация включена':'Анимация выключена')}
 function toggleTheme(){state.theme=state.theme==='dark'?'light':'dark';localStorage.setItem('mr-theme',state.theme);applyTheme();toast(state.theme==='dark'?'🌙 Тёмная тема':'☀ Светлая тема')}
 function setPalette(p){state.palette=p;localStorage.setItem('mr-palette',p);applyTheme();render();toast('🎨 Тема применена')}
 function setFont(kind,name){state['font'+kind]=name;localStorage.setItem('mr-font-'+kind.toLowerCase(),name);applyTheme();render();toast('✍ '+name)}
@@ -591,7 +617,7 @@ async function loadAllData(){
   const uid=state.user.id;
   const safe=async(p,fb)=>{try{const r=await p;return r.data||fb}catch(e){console.warn('load',e);return fb}};
   state.tasks=await safe(sb.from('tasks').select('*').eq('user_id',uid).order('created_at',{ascending:false}),[]);
-  state.habits=await safe(sb.from('habits').select('*').eq('user_id',uid).order('created_at'),[]);
+  state.habits=await safe(sb.from('habits').select('*').or(`user_id.eq.${uid},shared.eq.true`).order('created_at'),[]);
   state.habit_marks=await safe(sb.from('habit_marks').select('*').eq('user_id',uid),[]);
   state.foods=await safe(sb.from('foods').select('*').eq('user_id',uid).order('created_at',{ascending:false}),[]);
   state.meals=await safe(sb.from('meals').select('*').eq('user_id',uid).order('created_at',{ascending:false}),[]);
@@ -656,6 +682,8 @@ function finTotals(period){
   let from,to;
   if(period==='month'){from=new Date(now.getFullYear(),now.getMonth(),1);to=new Date(now.getFullYear(),now.getMonth()+1,0)}
   else if(period==='week'){from=new Date(now);from.setDate(from.getDate()-6);to=now}
+  else if(period==='last30'){from=new Date(now);from.setDate(from.getDate()-29);to=now}
+  else if(period==='year'){from=new Date(now);from.setDate(from.getDate()-364);to=now}
   else{from=new Date(0);to=new Date(86400e12)}
   const fromS=new Date(from-from.getTimezoneOffset()*60000).toISOString().slice(0,10);
   const toS=new Date(to-to.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -670,15 +698,19 @@ const CAT_COLORS=['#b8a1ed','#e8a3c6','#f4c06f','#8fcfb0','#a1c8ed','#f0a8a8','#
 /* ============ CRUD ============ */
 async function taskadd(){if(!state.user)return;const text=$('tasktext').value.trim();if(!text)return;const tag=$('tasktag')?.value||'other';const {data,error}=await sb.from('tasks').insert({user_id:state.user.id,date:state.date,text,tag,done:false}).select().single();if(error)return toast('Ошибка: '+error.message);if(!state.tasks.find(x=>x.id===data.id))state.tasks.unshift(data);$('tasktext').value='';render();toast('✨ Задача добавлена')}
 async function toggleTask(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;const newDone=!t.done;t.done=newDone;await sb.from('tasks').update({done:newDone}).eq('id',id);if(newDone){const all=state.tasks.filter(x=>x.date===state.date);if(all.length&&all.every(x=>x.done)){confetti();toast('🎉 Все задачи!')}}render()}
+async function editTask(id){const t=state.tasks.find(x=>x.id===id);if(!t)return;const text=prompt('Изменить задачу:',t.text);if(text===null)return;const v=text.trim();if(!v)return;const {error}=await sb.from('tasks').update({text:v}).eq('id',id);if(error)return toast('Ошибка: '+error.message);t.text=v;render();toast('✎ Сохранено')}
+function shareTask(id){const t=state.tasks.find(x=>x.id===id);if(t)shareMax('☐ '+t.text+' · '+t.date)}
 async function delTask(id){if(!confirm('Удалить задачу?'))return;await sb.from('tasks').delete().eq('id',id);state.tasks=state.tasks.filter(x=>x.id!==id);render();toast('Удалено')}
-async function carryOver(){const undone=state.tasks.filter(x=>x.date===state.date&&!x.done);if(!undone.length)return toast('Переносить нечего ✨');const tm=new Date(state.date+'T12:00:00');tm.setDate(tm.getDate()+1);const t2=new Date(tm-tm.getTimezoneOffset()*60000).toISOString().slice(0,10);const rows=undone.map(t=>({user_id:state.user.id,date:t2,text:t.text,tag:t.tag,done:false,carried:true}));await sb.from('tasks').insert(rows);await loadAllData();render();toast(`→ Перенесено ${undone.length}`)}
+async function carryOver(){const undone=state.tasks.filter(x=>x.date===state.date&&!x.done);if(!undone.length)return toast('Переносить нечего ✨');const tm=new Date(state.date+'T12:00:00');tm.setDate(tm.getDate()+1);const t2=ymd(tm);const rows=undone.map(t=>({user_id:state.user.id,date:t2,text:t.text,tag:t.tag,done:false,carried:true}));const {error}=await sb.from('tasks').insert(rows);if(error)return toast('Ошибка: '+error.message);await sb.from('tasks').delete().in('id',undone.map(t=>t.id));await loadAllData();render();toast(`→ Перенесено ${undone.length}`)}
 async function mark(habit_id,date){if(!state.user)return;const ex=state.habit_marks.find(m=>m.habit_id===habit_id&&m.date===date);if(ex){const newDone=!ex.done;ex.done=newDone;await sb.from('habit_marks').update({done:newDone}).eq('id',ex.id)}else{const {data}=await sb.from('habit_marks').insert({user_id:state.user.id,habit_id,date,done:true}).select().single();if(data)state.habit_marks.push(data)}render()}
 async function habitadd(){if(!state.user)return;const name=$('habitname').value.trim();if(!name)return;const emoji=$('habitemoji')?.value?.trim()||'✦';const shared=$('habitshared')?.checked||false;const {data,error}=await sb.from('habits').insert({user_id:state.user.id,name,emoji,start_date:state.date,shared}).select().single();if(error)return toast('Ошибка: '+error.message);state.habits.push(data);render();toast(shared?'💜 Общая привычка':'✦ Привычка добавлена')}
 async function delHabit(id){if(!confirm('Удалить привычку?'))return;await sb.from('habits').delete().eq('id',id);state.habits=state.habits.filter(x=>x.id!==id);state.habit_marks=state.habit_marks.filter(x=>x.habit_id!==id);render()}
 async function addfood(){if(!state.user)return;const name=$('fname').value.trim();if(!name)return alert('Введите название');const v=['fk','fp','ff','fc'].map(num);const {data,error}=await sb.from('foods').insert({user_id:state.user.id,name,k:v[0],p:v[1],f:v[2],c:v[3]}).select().single();if(error)return toast('Ошибка: '+error.message);state.foods.unshift(data);render();toast('◉ Продукт добавлен')}
 async function delFood(id){if(!confirm('Удалить продукт?'))return;await sb.from('foods').delete().eq('id',id);state.foods=state.foods.filter(x=>x.id!==id);render()}
-async function addmeal(){if(!state.user)return;const f=state.foods.find(x=>x.id===$('foodselect').value);const g=num('grams');if(!f||g<=0)return alert('Выберите продукт и массу');const m={user_id:state.user.id,date:state.date,type:$('mealtype').value,name:f.name,grams:g,k:f.k*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100};const {data,error}=await sb.from('meals').insert(m).select().single();if(error)return toast('Ошибка: '+error.message);state.meals.unshift(data);render();toast('◉ Записано')}
+async function addmeal(){if(!state.user)return;const f=state.foods.find(x=>x.id===$('foodselect').value);const g=num('grams');if(!f||g<=0)return alert('Выберите продукт и массу');localStorage.setItem('mr-last-meal-type',$('mealtype').value);const m={user_id:state.user.id,date:state.date,type:$('mealtype').value,name:f.name,grams:g,k:f.k*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100};const {data,error}=await sb.from('meals').insert(m).select().single();if(error)return toast('Ошибка: '+error.message);state.meals.unshift(data);render();toast('◉ Записано')}
+async function copyYesterdayMeals(){if(!state.user)return;const y=addDays(state.date,-1);const src=mealsForDate(y);if(!src.length)return toast('Вчера записей не было');if(!confirm(`Скопировать ${src.length} записей за ${y} на ${state.date}?`))return;const rows=src.map(m=>({user_id:state.user.id,date:state.date,type:m.type,name:m.name,grams:m.grams,k:m.k,p:m.p,f:m.f,c:m.c}));const {data,error}=await sb.from('meals').insert(rows).select();if(error)return toast('Ошибка: '+error.message);(data||[]).forEach(m=>{if(!state.meals.find(x=>x.id===m.id))state.meals.unshift(m)});render();toast('◉ Скопировано')}
 async function delMeal(id){if(!confirm('Удалить запись?'))return;await sb.from('meals').delete().eq('id',id);state.meals=state.meals.filter(x=>x.id!==id);render()}
+function defaultMealType(){const h=new Date().getHours();return h<11?'Завтрак':h<16?'Обед':h<21?'Ужин':'Перекус'}
 function ingredientRow(){const el=document.createElement('div');el.className='row ingredient';el.style.marginTop='12px';el.innerHTML=`<select>${state.foods.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('')}</select><input type="number" min="1" placeholder="Масса, г"><button class="delete" onclick="this.parentNode.remove()">×</button>`;$('ingredients').appendChild(el)}
 async function saverecipe(){const name=$('rname').value.trim(),y=num('yield');if(!name||y<=0)return alert('Введите название и вес');const a={k:0,p:0,f:0,c:0},ing=[];for(const el of document.querySelectorAll('.ingredient')){const f=state.foods.find(x=>x.id===el.querySelector('select').value);const g=Number(el.querySelector('input').value);if(!f||g<=0)return alert('Заполните ингредиент');ing.push({name:f.name,grams:g});['k','p','f','c'].forEach(k=>a[k]+=f[k]*g/100)}if(!ing.length)return alert('Добавьте ингредиент');const per100={};['k','p','f','c'].forEach(k=>per100[k]=a[k]/y*100);await sb.from('recipes').insert({user_id:state.user.id,name,yield:y,ingredients:ing});await sb.from('foods').insert({user_id:state.user.id,name:'Рецепт: '+name,k:per100.k,p:per100.p,f:per100.f,c:per100.c});await loadAllData();render();toast('♧ Сохранено')}
 async function delRecipe(id){if(!confirm('Удалить рецепт?'))return;await sb.from('recipes').delete().eq('id',id);state.recipes=state.recipes.filter(x=>x.id!==id);render()}
@@ -694,9 +726,7 @@ async function addTransaction(){
   if(type==='expense'){
     const a=state.accounts.find(x=>x.id===acc);
     const available=Number(a?.balance||0);
-    if(amount>available){
-      return alert(`❌ Недостаточно средств на счёте «${a?.name||''}».\n\nДоступно: ${available.toFixed(0)} ₽\nПытаетесь списать: ${amount.toFixed(0)} ₽\n\nОстаток не может быть отрицательным.`);
-    }
+    if(amount>available&&!confirm(`На счёте «${a?.name||''}» только ${rub(available)}, а расход ${rub(amount)}.\n\nЗаписать всё равно (счёт уйдёт в минус)?`))return;
   }
   const {error}=await sb.from('transactions').insert({date:state.date,type,amount,category:cat,account_id:acc,note,who:state.user.id});
   if(error)return toast('Ошибка: '+error.message);
@@ -704,14 +734,15 @@ async function addTransaction(){
   if(!a){const {data:accData}=await sb.from('accounts').select('*').eq('id',acc).maybeSingle();if(accData){state.accounts.push(accData);a=accData}}
   if(a){const newBal=Number(a.balance||0)+(type==='income'?amount:-amount);await sb.from('accounts').update({balance:newBal}).eq('id',acc);a.balance=newBal}
   const {data:txs}=await sb.from('transactions').select('*').order('date',{ascending:false});
-  state.transactions=txs||[];render();
+  state.transactions=txs||[];$('txAmount').value='';$('txNote').value='';render();
   toast(type==='income'?'💰 +'+amount:'💸 −'+amount);
 }
 async function delTransaction(id){if(!confirm('Удалить операцию?'))return;const t=state.transactions.find(x=>x.id===id);if(t&&t.account_id){const a=state.accounts.find(x=>x.id===t.account_id);if(a){const newBal=Number(a.balance||0)-(t.type==='income'?Number(t.amount):-Number(t.amount));await sb.from('accounts').update({balance:newBal}).eq('id',a.id);a.balance=newBal}}await sb.from('transactions').delete().eq('id',id);state.transactions=state.transactions.filter(x=>x.id!==id);render();toast('Удалено')}
 async function addAccount(){if(!state.user)return;const name=$('accName').value.trim(),emoji=$('accEmoji').value.trim()||'💳',bal=num('accBal');if(!name)return alert('Введите название');const {data,error}=await sb.from('accounts').insert({name,emoji,balance:bal,created_by:state.user.id}).select().single();if(error)return toast('Ошибка: '+error.message);state.accounts.push(data);render();toast('Счёт добавлен')}
 async function delAccount(id){if(!confirm('Удалить счёт? Операции останутся.'))return;await sb.from('accounts').delete().eq('id',id);state.accounts=state.accounts.filter(x=>x.id!==id);render()}
 async function addFinGoal(){if(!state.user)return;const name=$('fgName').value.trim(),target=num('fgTarget');const emoji=$('fgEmoji').value.trim()||'🎯',deadline=$('fgDeadline').value||null;if(!name||target<=0)return alert('Заполните название и цель');const {data,error}=await sb.from('fin_goals').insert({name,target,emoji,deadline,saved:0}).select().single();if(error)return toast('Ошибка: '+error.message);state.fin_goals.push(data);render();toast('🎯 Цель добавлена')}
-async function addToGoal(id){const g=state.fin_goals.find(x=>x.id===id);if(!g)return;const sum=Number(prompt('Сколько отложить?','1000'));if(!sum||sum<=0)return;const totalBalance=finBalance();if(sum>totalBalance)return alert('Недостаточно средств. Доступно: '+totalBalance.toFixed(0)+' ₽');const newSaved=Math.min(Number(g.target),Number(g.saved||0)+sum);await sb.from('fin_goals').update({saved:newSaved}).eq('id',id);g.saved=newSaved;if(newSaved>=Number(g.target)){confetti();toast('🎉 Цель достигнута!')}else toast('💜 Отложено '+sum+' ₽');render()}
+async function addToGoal(id){const g=state.fin_goals.find(x=>x.id===id);if(!g)return;const sum=Number(String(prompt('Сколько отложить? (минус — забрать обратно)','1000')||'').replace(',','.'));if(!sum)return;const newSaved=Math.max(0,Math.min(Number(g.target),Number(g.saved||0)+sum));await sb.from('fin_goals').update({saved:newSaved}).eq('id',id);g.saved=newSaved;if(newSaved>=Number(g.target)){confetti();toast('🎉 Цель достигнута!')}else toast('💜 Отложено '+sum+' ₽');render()}
+async function delFinGoal(id){if(!confirm('Удалить цель?'))return;await sb.from('fin_goals').delete().eq('id',id);state.fin_goals=state.fin_goals.filter(x=>x.id!==id);render()}
 // НОВОЕ: плановые платежи
 async function addPayment(){
   if(!state.user)return;
@@ -722,10 +753,9 @@ async function addPayment(){
   const accountId=$('payAcc').value||null;
   if(!name||amount<=0)return alert('Введите название и сумму');
   if(dayOfMonth<1||dayOfMonth>31)return alert('День месяца: 1-31');
-  const now=new Date();
-  let nextDate=new Date(now.getFullYear(),now.getMonth(),dayOfMonth);
-  if(nextDate<now)nextDate=new Date(now.getFullYear(),now.getMonth()+1,dayOfMonth);
-  const nextS=nextDate.toISOString().slice(0,10);
+  const now=new Date(),today=todayStr();
+  let nextS=payDateIn(now.getFullYear(),now.getMonth(),dayOfMonth);
+  if(nextS<today)nextS=payDateIn(now.getFullYear(),now.getMonth()+1,dayOfMonth);
   const {data,error}=await sb.from('payments').insert({name,amount,day_of_month:dayOfMonth,emoji,account_id:accountId,next_date:nextS,active:true,who:state.user.id}).select().single();
   if(error)return toast('Ошибка: '+error.message);
   state.payments.push(data);render();toast('📅 Платёж добавлен');
@@ -734,19 +764,15 @@ async function delPayment(id){if(!confirm('Удалить платёж?'))return
 async function markPaymentPaid(id){
   const p=state.payments.find(x=>x.id===id);if(!p)return;
   const acc=state.accounts.find(x=>x.id===p.account_id);
-  if(acc&&Number(acc.balance)<Number(p.amount)){
-    if(!confirm(`Недостаточно средств на счёте.\nБаланс: ${Number(acc.balance).toFixed(0)} ₽\nНужно: ${Number(p.amount).toFixed(0)} ₽\n\nСписать всё равно (уйдёте в минус)?`))return;
-  }
-  if(!confirm(`Отметить платёж «${p.name}» оплаченным?\n\nБудет создана операция расхода на ${p.amount} ₽`))return;
+  const low=acc&&Number(acc.balance)<Number(p.amount)?`\n\n⚠️ На счёте только ${rub(acc.balance)} — он уйдёт в минус.`:'';
+  if(!confirm(`Отметить платёж «${p.name}» оплаченным?\n\nБудет создана операция расхода на ${rub(p.amount)}.${low}`))return;
   const {error}=await sb.from('transactions').insert({date:todayStr(),type:'expense',amount:p.amount,category:'Платежи',account_id:p.account_id,note:'План: '+p.name,who:state.user.id});
   if(error)return toast('Ошибка: '+error.message);
   if(acc){const nb=Number(acc.balance||0)-Number(p.amount);await sb.from('accounts').update({balance:nb}).eq('id',acc.id);acc.balance=nb}
-  const next=new Date(p.next_date+'T12:00:00');next.setMonth(next.getMonth()+1);
-  const nextS=next.toISOString().slice(0,10);
+  const cur=new Date(p.next_date+'T12:00:00');
+  const nextS=payDateIn(cur.getFullYear(),cur.getMonth()+1,Number(p.day_of_month)||cur.getDate());
   await sb.from('payments').update({next_date:nextS}).eq('id',id);
   p.next_date=nextS;
-  const {data:txs}=await sb.from('transactions').select('*').order('date',{ascending:false});
-  state.transactions=txs||[];
   await loadAllData();render();toast('✅ Платёж отмечен');
 }
 
@@ -761,7 +787,7 @@ async function togglePlan(id){const p=state.plans.find(x=>x.id===id);if(!p)retur
 async function delPlan(id){if(!confirm('Удалить?'))return;await sb.from('plans').delete().eq('id',id);state.plans=state.plans.filter(x=>x.id!==id);render()}
 
 /* ============ НАПОМИНАНИЯ ============ */
-async function addReminder(){if(!state.user)return;const text=$('remText').value.trim(),time=$('remTime').value;const d=$('remDate').value||todayStr(),rec=$('remRec').value;if(!text||!time)return alert('Введите текст и время');const {data,error}=await sb.from('reminders').insert({user_id:state.user.id,text,time,date:d,recurring:rec}).select().single();if(error)return toast('Ошибка');state.reminders.push(data);render();toast('🔔 Добавлено')}
+async function addReminder(){if(!state.user)return;const text=$('remText').value.trim(),time=$('remTime').value;const d=$('remDate').value||todayStr(),rec=$('remRec').value;if(!text||!time)return alert('Введите текст и время');const {data,error}=await sb.from('reminders').insert({user_id:state.user.id,text,time,date:d,recurring:rec}).select().single();if(error)return toast('Ошибка');state.reminders.push(data);render();toast('🔔 Добавлено');if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}
 async function delReminder(id){await sb.from('reminders').delete().eq('id',id);state.reminders=state.reminders.filter(x=>x.id!==id);render()}
 async function saveGoal(key,val){if(!state.user)return;state.goals[key]=val;const {id,...rest}=state.goals;const {error}=await sb.from('goals').upsert({user_id:state.user.id,...rest});if(error)toast('Ошибка сохранения')}
 async function saveProfile(){if(!state.user)return;const name=$('profName').value.trim(),emoji=$('profEmoji').value.trim()||'💜',role=$('profRole').value.trim();const {error}=await sb.from('profiles').update({display_name:name,emoji,role}).eq('id',state.user.id);if(error)return toast('Ошибка');state.profile.display_name=name;state.profile.emoji=emoji;state.profile.role=role;render();toast('💜 Сохранено')}
@@ -781,22 +807,21 @@ async function tttReset(){const g=state.game_ttt;if(!g)return;await sb.from('gam
 function diceRoll(){const a=Math.floor(Math.random()*6)+1,b=Math.floor(Math.random()*6)+1;window._diceA=a;window._diceB=b;const el1=$('diceA'),el2=$('diceB');if(el1){el1.textContent=a;el1.classList.add('roll');setTimeout(()=>el1.classList.remove('roll'),800)}if(el2){el2.textContent=b;el2.classList.add('roll');setTimeout(()=>el2.classList.remove('roll'),800)}setTimeout(()=>toast(a===b?'Ничья 🎲':a>b?'🎲 Ты выиграл!':'🎲 '+(state.partner?.display_name||'Партнёр')+' выиграл!'),800)}
 let lastComp=-1;
 function compliment(){let i;do{i=Math.floor(Math.random()*COMPLIMENTS.length)}while(i===lastComp&&COMPLIMENTS.length>1);lastComp=i;const el=$('compBox');if(el){el.classList.remove('flip');void el.offsetWidth;el.classList.add('flip');setTimeout(()=>{el.textContent=COMPLIMENTS[i]},300)}confetti()}
-let quizCurrent=null;
-function quizStart(){quizCurrent=QUIZ_Q[Math.floor(Math.random()*QUIZ_Q.length)];render()}
-function quizAnswer(){if(!quizCurrent)return;const v=Number($('quizInput').value);if(v===quizCurrent.a){confetti();toast('🎉 Правильно!')}else toast('❌ Ответ: '+quizCurrent.a);quizCurrent=null;render()}
-function guessPlay(){if(!state.user)return;const val=Number($('guessInput').value);if(!val||val<1||val>100)return toast('Число от 1 до 100');const key='mr-guess-'+state.user.id;const stored=JSON.parse(localStorage.getItem(key)||'{}');const now=Date.now();if(!stored.secret||(now-stored.start)>5*60*1000){stored.secret=Math.floor(Math.random()*100)+1;stored.start=now;stored.attempts=0}stored.attempts++;localStorage.setItem(key,JSON.stringify(stored));const fb=$('guessFeedback');if(val===stored.secret){if(fb)fb.innerHTML=`<p style="color:var(--success);font-weight:700">🎉 Угадал за ${stored.attempts} попыток! Число: ${stored.secret}</p><button class="small" onclick="localStorage.removeItem('${key}');document.getElementById('guessFeedback').innerHTML='<p class=\\'muted\\'>Начни заново ✨</p>'">🔄 Новая игра</button>`;confetti()}else if(val<stored.secret){if(fb)fb.innerHTML=`<p>📈 Больше! Попытка №${stored.attempts}</p>`}else{if(fb)fb.innerHTML=`<p>📉 Меньше! Попытка №${stored.attempts}</p>`}$('guessInput').value=''}
+let talkShift=0;
+function talkQuestion(){const n=Math.floor(new Date(state.date+'T12:00:00')/864e5)+talkShift;return TALK_Q[((n%TALK_Q.length)+TALK_Q.length)%TALK_Q.length]}
+function talkNext(){talkShift++;render()}
 
 /* ============ НАПОМИНАНИЯ ПО ВРЕМЕНИ ============ */
 let notifiedCache={};let notifiedCacheSize=0;
-function checkReminders(){if(!state.user)return;const now=new Date(),curDate=todayStr(),curTime=now.toTimeString().slice(0,5);state.reminders.forEach(r=>{if(r.done)return;const k=r.id+'_'+curDate+'_'+curTime;if(notifiedCache[k])return;if(r.recurring==='daily'&&r.time===curTime){notifiedCache[k]=true;notifiedCacheSize++;notifyReminder(r)}else if(r.recurring==='none'&&r.date===curDate&&r.time===curTime){notifiedCache[k]=true;notifiedCacheSize++;notifyReminder(r);sb.from('reminders').update({done:true}).eq('id',r.id).then(()=>{r.done=true})}});if(notifiedCacheSize>500){notifiedCache={};notifiedCacheSize=0}}
+function checkReminders(){if(!state.user)return;const now=new Date(),curDate=todayStr(),curTime=now.toTimeString().slice(0,5);state.reminders.forEach(r=>{if(r.done)return;const k=r.id+'_'+curDate+'_'+curTime;if(notifiedCache[k])return;const rt=String(r.time||'').slice(0,5);if(r.recurring==='daily'&&rt===curTime){notifiedCache[k]=true;notifiedCacheSize++;notifyReminder(r)}else if(r.recurring==='none'&&r.date===curDate&&rt===curTime){notifiedCache[k]=true;notifiedCacheSize++;notifyReminder(r);sb.from('reminders').update({done:true}).eq('id',r.id).then(()=>{r.done=true})}});if(notifiedCacheSize>500){notifiedCache={};notifiedCacheSize=0}}
 function notifyReminder(r){toast('🔔 '+r.text);if('Notification' in window&&Notification.permission==='granted'){new Notification('Мой Ритм',{body:r.text})}}
 function requestNotifPerm(){if('Notification' in window&&Notification.permission!=='granted'){Notification.requestPermission().then(p=>{if(p==='granted')toast('🔔 Уведомления включены');else toast('Отклонено')})}else toast('Уже разрешено')}
 setInterval(checkReminders,30000);
 
 /* ============ БЭКАП ============ */
 function download(text,name,type){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function backup(){const data={profile:state.profile,tasks:state.tasks,habits:state.habits,habit_marks:state.habit_marks,foods:state.foods,meals:state.meals,recipes:state.recipes,days:state.days,reminders:state.reminders,goals:state.goals};download(JSON.stringify(data,null,2),'Мой-ритм-'+todayStr()+'.json','application/json');toast('↓ Копия сохранена')}
-async function restore(file){if(!file||!state.user)return;try{const x=JSON.parse(await file.text());if(!confirm('Заменить все ваши личные данные из файла?'))return;const uid=state.user.id;if(x.tasks)for(const t of x.tasks){delete t.id;t.user_id=uid;await sb.from('tasks').insert(t).then(()=>{}).catch(()=>{})}if(x.meals)for(const m of x.meals){delete m.id;m.user_id=uid;await sb.from('meals').insert(m).then(()=>{}).catch(()=>{})}await loadAllData();render();toast('↥ Восстановлено')}catch(e){alert('Не удалось прочитать файл')}}
+function backup(){const keys=['profile','tasks','habits','habit_marks','foods','meals','recipes','days','reminders','goals','accounts','transactions','fin_goals','payments','wishlist','important_dates','plans'];const data={version:9,exported:new Date().toISOString()};keys.forEach(k=>data[k]=state[k]);download(JSON.stringify(data,null,2),'Мой-ритм-'+todayStr()+'.json','application/json');toast('↓ Копия сохранена')}
+async function restore(file){if(!file||!state.user)return;try{const x=JSON.parse(await file.text());if(!confirm('Добавить задачи, продукты и записи питания из файла? Существующие данные не удаляются.'))return;const uid=state.user.id;for(const t of ['tasks','foods','meals']){const rows=(x[t]||[]).map(r=>{const {id,created_at,...rest}=r;return {...rest,user_id:uid}});if(rows.length){const {error}=await sb.from(t).insert(rows);if(error)console.warn('restore',t,error)}}await loadAllData();render();toast('↥ Восстановлено')}catch(e){alert('Не удалось прочитать файл')}}
 function csv(){const rows=[['Дата','Приём','Продукт','г','Ккал','Б','Ж','У'],...state.meals.map(m=>[m.date,m.type,m.name,m.grams,m.k,m.p,m.f,m.c])];download('\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(';')).join('\r\n'),'Питание.csv','text/csv;charset=utf-8')}
 async function reloadAll(){await loadAllData();render();toast('↻ Обновлено')}
 
@@ -822,7 +847,7 @@ function hero(){
   const s=streak();
   const fire=s>=7?'🔥🔥':s>=3?'🔥':'✦';
   const q=QUOTES[((n%QUOTES.length)+QUOTES.length)%QUOTES.length];
-  return `<div class="hero"><div><span class="for">${u.emoji} ${esc(u.display_name)}</span><h2>${g}!</h2><p>${q[1]}</p><div class="chips"><span>${fire} Серия: ${s}</span><span>${p>=100?'🎉 День закрыт!':'✨ Прогресс: '+p+'%'}</span><span>${tk.filter(x=>!x.done).length} задач</span><span>💰 ${finBalance().toFixed(0)} ₽</span>${state.partner?`<span>💜 ${state.partner.emoji} ${esc(state.partner.display_name)} рядом</span>`:''}</div></div><div class="ring" style="--p:${p}"><span><div>${p}%<small>дня</small></div></span></div></div>`;
+  return `<div class="hero"><div><span class="for">${u.emoji} ${esc(u.display_name)}</span><h2>${g}!</h2><p>${q[1]}</p><div class="chips"><span>${fire} Серия: ${s}</span><span>${p>=100?'🎉 День закрыт!':'✨ Прогресс: '+p+'%'}</span><span>${tk.filter(x=>!x.done).length} задач</span><span>💰 ${rub(finBalance())}</span>${state.partner?`<span>💜 ${state.partner.emoji} ${esc(state.partner.display_name)} рядом</span>`:''}</div></div><div class="ring" style="--p:${p}"><span><div>${p}%<small>дня</small></div></span></div></div>`;
 }
 
 /* ============ ГЛАВНЫЙ РЕНДЕР ============ */
@@ -836,6 +861,8 @@ function render(){
     $('dedicText').textContent='для '+(u.display_name||'')+' ♡';
     const titleName=pages[state.page]||extraPages[state.page]||'Мой день';
     $('title').textContent=titleName;
+    if($('date'))$('date').value=state.date;
+    if($('todayBtn'))$('todayBtn').classList.toggle('hidden',state.date===todayStr());
     $('datelabel').textContent=new Date(state.date+'T12:00:00').toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
     const dueReminders=state.reminders.filter(r=>!r.done&&((r.recurring==='none'&&r.date===state.date)||r.recurring==='daily')).length;
@@ -862,19 +889,19 @@ function render(){
     /* ===== МОЙ ДЕНЬ ===== */
     if(state.page==='today'){
       const fin=finTotals('month');
-      const todayP=state.payments.filter(p=>p.active&&p.next_date<=todayStr()).sort((a,b)=>a.next_date.localeCompare(b.next_date));
+      const todayP=state.payments.filter(p=>p.active&&daysUntil(p.next_date)<=2).sort((a,b)=>a.next_date.localeCompare(b.next_date));
       out=hero()+`
       <div class="cards">
         ${card('✦ Привычки',done+' / '+active.length,'Каждый шаг важен','lavender',active.length?done/active.length:0)}
         ${card('◉ Калории',Math.round(t.k),'Цель: '+state.goals.k,'peach',t.k/state.goals.k)}
         ${card('≈ Вода',(d.water||0)+' мл','Цель: '+state.goals.water+' мл','blue',(d.water||0)/state.goals.water)}
-        ${card('💰 Баланс',fin.balance.toFixed(0)+' ₽',fin.balance>=0?'В плюсе ✓':'В минусе','mint')}
+        ${card('💰 Месяц',(fin.balance>=0?'+':'')+rub(fin.balance),'доходы − расходы','mint')}
       </div>
-      ${todayP.length?`<div class="panel gold"><h2>📅 Платежи на сегодня</h2>${todayP.map(p=>`<div class="payment-item"><span style="font-size:22px">${p.emoji||'📅'}</span><div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">должно было быть ${p.next_date}</div></div><span class="pamount">${p.amount.toFixed(0)} ₽</span><button class="small primary" onclick="markPaymentPaid('${p.id}')">✓ Оплатить</button></div>`).join('')}</div>`:''}
+      ${todayP.length?`<div class="panel gold"><h2>📅 Скоро платить</h2>${todayP.map(p=>{const dt=daysUntil(p.next_date);return `<div class="payment-item"><span style="font-size:22px">${p.emoji||'📅'}</span><div class="pinfo"><div class="pname">${esc(p.name)}</div><div class="pmeta">${dt<0?'просрочен на '+(-dt)+' дн.':dt===0?'сегодня':dt===1?'завтра':'через '+dt+' дн.'}</div></div><span class="pamount">${rub(p.amount)}</span><button class="small primary" onclick="markPaymentPaid('${p.id}')">✓ Оплатить</button></div>`}).join('')}</div>`:''}
       <div class="grid"><div>
         <div class="panel"><h2>Главное на сегодня</h2>
           <div class="row"><input id="tasktext" placeholder="Добавить задачу…" onkeydown="if(event.key==='Enter')taskadd()"><select id="tasktag" style="flex:0 0 120px">${Object.entries(TAGS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select><button class="primary" onclick="taskadd()">+</button></div>
-          ${tasks.length?tasks.map(x=>`<div class="item"><input type="checkbox" ${x.done?'checked':''} onchange="toggleTask('${x.id}')"><span class="${x.done?'done':''}"><span class="tag ${TAGS[x.tag||'other'].cls}">${TAGS[x.tag||'other'].label}</span>${x.carried?'↻ ':''}${esc(x.text)}</span><button class="delete small" onclick="shareMax('☐ ${esc(x.text).replace(/'/g,"\\'")} · ${state.date}')" title="В MAX">💬</button><button class="delete" onclick="delTask('${x.id}')">×</button></div>`).join(''):empty('Освободи голову: запиши первую задачу ✿')}
+          ${tasks.length?tasks.map(x=>`<div class="item"><input type="checkbox" ${x.done?'checked':''} onchange="toggleTask('${x.id}')"><span class="${x.done?'done':''}"><span class="tag ${TAGS[x.tag||'other'].cls}">${TAGS[x.tag||'other'].label}</span>${x.carried?'↻ ':''}${esc(x.text)}</span><button class="delete small" onclick="editTask('${x.id}')" title="Изменить">✎</button><button class="delete small" onclick="shareTask('${x.id}')" title="В MAX">💬</button><button class="delete" onclick="delTask('${x.id}')">×</button></div>`).join(''):empty('Освободи голову: запиши первую задачу ✿')}
           ${tasks.some(x=>!x.done)?`<div class="row" style="margin-top:14px"><button class="ghost" onclick="carryOver()">→ Перенести на завтра</button></div>`:''}
         </div>
         <div class="panel"><h2>Мои ритуалы ♡</h2>${active.length?active.map(h=>`<div class="item"><input type="checkbox" ${markKey(h.id,state.date)?'checked':''} onchange="mark('${h.id}','${state.date}')"><span>${h.emoji||'✦'} ${esc(h.name)} ${h.shared?'<span class="pill">общая</span>':''}</span></div>`).join(''):empty('Добавь ритуалы в «Привычках» ✦')}</div>
@@ -895,8 +922,8 @@ function render(){
       const daysInMonth=new Date(Number(state.date.slice(0,4)),Number(state.date.slice(5,7)),0).getDate();
       let heat='';
       for(let i=27;i>=0;i--){const dt=new Date(state.date+'T12:00:00');dt.setDate(dt.getDate()-i);const k=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,10);const cnt=state.habit_marks.filter(m=>m.done&&m.date===k).length;const lvl=cnt===0?0:cnt<2?1:cnt<4?2:cnt<6?3:4;heat+=`<i class="l${lvl||''}" title="${k}: ${cnt}"></i>`}
-      out=`<div class="panel lavender"><h2>Постоянство, а не совершенство ✦</h2><div class="row"><input id="habitname" placeholder="Привычка" onkeydown="if(event.key==='Enter')habitadd()"><input id="habitemoji" placeholder="♡" style="flex:0 0 70px;text-align:center" maxlength="3"><label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="habitshared"> Общая</label><button class="primary" onclick="habitadd()">+</button></div><p class="muted">«Общая» — видна партнёру в реальном времени.</p><h2 style="margin-top:20px">Карта активности · 4 недели</h2><div class="heat">${heat}</div></div>
-      <div class="panel tablewrap"><table><thead><tr><th>Привычка</th>${Array.from({length:daysInMonth},(_,i)=>`<th>${i+1}</th>`).join('')}<th>%</th><th></th></tr></thead><tbody>${state.habits.map(h=>{let n=0,m=0;const cells=Array.from({length:daysInMonth},(_,i)=>{const dt=base+'-'+String(i+1).padStart(2,'0');const eligible=dt>=h.start_date&&dt<=todayStr();if(eligible){m++;if(markKey(h.id,dt))n++}const checked=markKey(h.id,dt)?'checked':'';const disabled=dt>todayStr()?'disabled':'';const bg=dt===state.date?'rgba(0,0,0,.03)':'transparent';return `<td style="background:${bg}">${dt<h.start_date?'—':`<input type="checkbox" ${checked} ${disabled} onchange="mark('${h.id}','${dt}')">`}</td>`}).join('');const ownerBadge=h.shared?'<span class="pill">общая</span>':'';return `<tr><td>${h.emoji||'✦'} ${esc(h.name)} ${ownerBadge}</td>${cells}<td>${m?Math.round(n/m*100)+'%':'—'}</td><td><button class="delete" onclick="delHabit('${h.id}')">×</button></td></tr>`}).join('')}</tbody></table>${state.habits.length?'':empty('Первый шаг — одна привычка ✿')}</div>`;
+      out=`<div class="panel lavender"><h2>Постоянство, а не совершенство ✦</h2><div class="row"><input id="habitname" placeholder="Привычка" onkeydown="if(event.key==='Enter')habitadd()"><input id="habitemoji" placeholder="♡" style="flex:0 0 70px;text-align:center" maxlength="3"><label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="habitshared"> Общая</label><button class="primary" onclick="habitadd()">+</button></div><p class="muted">«Общая» — партнёр тоже увидит её у себя и сможет отмечать.</p><h2 style="margin-top:20px">Карта активности · 4 недели</h2><div class="heat">${heat}</div></div>
+      <div class="panel tablewrap"><table><thead><tr><th>Привычка</th>${Array.from({length:daysInMonth},(_,i)=>`<th>${i+1}</th>`).join('')}<th>%</th><th></th></tr></thead><tbody>${state.habits.map(h=>{let n=0,m=0;const cells=Array.from({length:daysInMonth},(_,i)=>{const dt=base+'-'+String(i+1).padStart(2,'0');const eligible=dt>=h.start_date&&dt<=todayStr();if(eligible){m++;if(markKey(h.id,dt))n++}const checked=markKey(h.id,dt)?'checked':'';const disabled=dt>todayStr()?'disabled':'';const bg=dt===state.date?'rgba(0,0,0,.03)':'transparent';return `<td style="background:${bg}">${dt<h.start_date?'—':`<input type="checkbox" ${checked} ${disabled} onchange="mark('${h.id}','${dt}')">`}</td>`}).join('');const ownerBadge=h.shared?'<span class="pill">общая</span>':'';return `<tr><td>${h.emoji||'✦'} ${esc(h.name)} ${ownerBadge}</td>${cells}<td>${m?Math.round(n/m*100)+'%':'—'}</td><td>${h.user_id===state.user.id?`<button class="delete" onclick="delHabit('${h.id}')">×</button>`:''}</td></tr>`}).join('')}</tbody></table>${state.habits.length?'':empty('Первый шаг — одна привычка ✿')}</div>`;
     }
 
     /* ===== ПИТАНИЕ (с табами Продукты/Рецепты) ===== */
@@ -905,7 +932,7 @@ function render(){
       const tabsHTML=`<div class="tabs"><button class="tab ${tab==='products'?'active':''}" onclick="state.foodTab='products';render()">🍎 Продукты</button><button class="tab ${tab==='recipes'?'active':''}" onclick="state.foodTab='recipes';render()">♧ Рецепты</button></div>`;
       if(tab==='products'){
         out=tabsHTML+`<div class="cards">${['k','p','f','c'].map((k,i)=>card(['Калории','Белки','Жиры','Углеводы'][i],Number(t[k]).toFixed(i?1:0)+(i?' г':' ккал'),'Цель: '+state.goals[k],['peach','lavender','mint','blue'][i],t[k]/state.goals[k])).join('')}</div>${macrobar(t)}
-        <div class="panel"><h2>Добавить приём пищи</h2><div class="row"><select id="mealtype"><option>Завтрак</option><option>Обед</option><option>Ужин</option><option>Перекус</option></select><select id="foodselect"><option value="">Продукт или рецепт</option>${state.foods.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('')}</select><input id="grams" type="number" min="1" placeholder="Граммы"><button class="primary" onclick="addmeal()">+ Записать</button></div><div class="tablewrap"><table><thead><tr><th>Приём</th><th>Продукт</th><th>г</th><th>Ккал</th><th>Б</th><th>Ж</th><th>У</th><th></th></tr></thead><tbody>${mealsForDate(state.date).map(m=>`<tr><td>${esc(m.type)}</td><td>${esc(m.name)}</td><td>${m.grams}</td>${['k','p','f','c'].map(k=>`<td>${Number(m[k]).toFixed(1)}</td>`).join('')}<td><button class="delete" onclick="delMeal('${m.id}')">×</button></td></tr>`).join('')}</tbody></table></div></div>
+        <div class="panel"><h2>Добавить приём пищи</h2><div class="row"><select id="mealtype">${['Завтрак','Обед','Ужин','Перекус'].map(x=>`<option ${x===(localStorage.getItem('mr-last-meal-type')||defaultMealType())?'selected':''}>${x}</option>`).join('')}</select><select id="foodselect"><option value="">Продукт или рецепт</option>${state.foods.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('')}</select><input id="grams" type="number" min="1" placeholder="Граммы"><button class="primary" onclick="addmeal()">+ Записать</button><button class="ghost" onclick="copyYesterdayMeals()" title="Скопировать вчерашние записи">↻ Как вчера</button></div><div class="tablewrap"><table><thead><tr><th>Приём</th><th>Продукт</th><th>г</th><th>Ккал</th><th>Б</th><th>Ж</th><th>У</th><th></th></tr></thead><tbody>${mealsForDate(state.date).map(m=>`<tr><td>${esc(m.type)}</td><td>${esc(m.name)}</td><td>${m.grams}</td>${['k','p','f','c'].map(k=>`<td>${Number(m[k]).toFixed(1)}</td>`).join('')}<td><button class="delete" onclick="delMeal('${m.id}')">×</button></td></tr>`).join('')}</tbody></table></div></div>
         <div class="panel"><h2>Моя база продуктов</h2><div class="row"><input id="fname" placeholder="Продукт"><input id="fk" type="number" min="0" placeholder="Ккал"><input id="fp" type="number" min="0" placeholder="Б"><input id="ff" type="number" min="0" placeholder="Ж"><input id="fc" type="number" min="0" placeholder="У"><button class="primary" onclick="addfood()">+</button></div><div class="tablewrap"><table><thead><tr><th>Продукт</th><th>Ккал/100</th><th>Б</th><th>Ж</th><th>У</th><th></th></tr></thead><tbody>${state.foods.map(f=>`<tr><td>${esc(f.name)}</td>${['k','p','f','c'].map(k=>`<td>${Number(f[k]).toFixed(1)}</td>`).join('')}<td><button class="delete" onclick="delFood('${f.id}')">×</button></td></tr>`).join('')}</tbody></table></div></div>`;
       } else {
         out=tabsHTML+`<div class="panel peach"><h2>Домашние блюда ♧</h2><p>Собери ингредиенты, укажи вес готового блюда — рецепт появится в списке продуктов.</p></div><div class="panel"><h2>Новый рецепт</h2><div class="row"><input id="rname" placeholder="Название блюда"><input id="yield" type="number" min="1" placeholder="Выход, г"></div><div id="ingredients"></div><div class="row" style="margin:15px 0"><button onclick="ingredientRow()">+ Ингредиент</button><button class="primary" onclick="saverecipe()">Сохранить</button></div></div><div class="panel"><h2>Мои рецепты</h2>${state.recipes.length?state.recipes.map(r=>`<div class="item"><span><b>${esc(r.name)}</b><br><small class="muted">${(r.ingredients||[]).map(i=>esc(i.name)+' '+i.grams+' г').join(' · ')}<br>Выход: ${r.yield} г</small></span><button class="delete" onclick="delRecipe('${r.id}')">×</button></div>`).join(''):empty('Собери первый рецепт ♧')}</div>`;
@@ -918,7 +945,8 @@ function render(){
       const fM=finTotals('month'),fW=finTotals('week');
       const cats=finByCategory('month');
       const totalExp=cats.reduce((a,c)=>a+c[1],0)||1;
-      const txList=state.transactions.slice(0,30);
+      const txF=window._txFilter||'all';
+      const txList=state.transactions.filter(t=>txF==='all'||(txF==='me'?t.who===state.user.id:txF==='partner'?t.who!==state.user.id:t.type===txF)).slice(0,50);
       const txType=window._txType||'expense';
       const balance=finBalance();
       // Кольцевая диаграмма
@@ -947,7 +975,7 @@ function render(){
       </div>
 
       <div class="grid-3" style="margin-top:22px">
-        ${state.accounts.map(a=>`<div class="card ${['blue','rose','gold','mint','lavender'][Math.floor(Math.random()*5)]}" style="position:relative"><div>${a.emoji} ${esc(a.name)}</div><b style="color:${Number(a.balance)<0?'var(--danger)':'inherit'}">${Number(a.balance||0).toFixed(0)} ₽</b><div class="muted">Счёт</div><button class="delete" style="position:absolute;top:12px;right:12px" onclick="delAccount('${a.id}')">×</button></div>`).join('')}
+        ${state.accounts.map((a,i)=>`<div class="card ${['blue','rose','gold','mint','lavender'][i%5]}" style="position:relative"><div>${a.emoji} ${esc(a.name)}</div><b style="color:${Number(a.balance)<0?'var(--danger)':'inherit'}">${Number(a.balance||0).toFixed(0)} ₽</b><div class="muted">Счёт</div><button class="delete" style="position:absolute;top:12px;right:12px" onclick="delAccount('${a.id}')">×</button></div>`).join('')||`<div class="panel" style="grid-column:1/-1">${empty('Добавь первый счёт — карту или наличные 💳')}</div>`}
       </div>
 
       <div class="grid-2" style="margin-top:22px">
@@ -973,7 +1001,7 @@ function render(){
             <input id="txNote" placeholder="Заметка">
             <button class="primary" onclick="addTransaction()">+ Записать</button>
           </div>
-          <p class="muted" style="margin-top:8px">🔒 Защита от минуса: расход не пройдёт, если на счёте недостаточно средств.</p>
+          <p class="muted" style="margin-top:8px">🔒 Если расход больше остатка на счёте, приложение спросит подтверждение.</p>
           <h2 style="margin-top:22px">💳 Добавить счёт</h2>
           <div class="row"><input id="accEmoji" placeholder="💳" style="flex:0 0 70px;text-align:center" maxlength="3"><input id="accName" placeholder="Название"><input id="accBal" type="number" placeholder="Баланс" style="flex:0 0 130px"><button onclick="addAccount()">+ Счёт</button></div>
         </div>
@@ -1008,8 +1036,26 @@ function render(){
         </div>
       </div>
 
+      <div class="panel mint">
+        <h2>🎯 Копим на мечту</h2>
+        <div class="row" style="margin-top:12px">
+          <input id="fgEmoji" placeholder="🎯" style="flex:0 0 70px;text-align:center" maxlength="3">
+          <input id="fgName" placeholder="На что копим?">
+          <input id="fgTarget" type="number" min="1" placeholder="Сумма ₽" style="flex:0 0 130px">
+          <input id="fgDeadline" type="date" style="flex:0 0 160px" title="К какой дате (необязательно)">
+          <button class="primary" onclick="addFinGoal()">+ Цель</button>
+        </div>
+        <div style="margin-top:12px">${state.fin_goals.length?state.fin_goals.map(g=>{
+          const saved=Number(g.saved||0),target=Number(g.target)||1,left=Math.max(0,target-saved);
+          const dl=g.deadline?daysUntil(g.deadline):null;
+          const perMonth=dl!==null&&dl>0&&left>0?left/Math.max(1,dl/30.4):0;
+          return `<div class="goal-item"><div class="row"><span><b>${g.emoji||'🎯'} ${esc(g.name)}</b><br><small class="muted">${rub(saved)} из ${rub(target)}${g.deadline?' · до '+g.deadline:''}${perMonth?' · ≈ '+rub(perMonth)+'/мес':''}</small></span><span class="row"><button class="small primary" onclick="addToGoal('${g.id}')">+ Отложить</button><button class="delete" onclick="delFinGoal('${g.id}')">×</button></span></div><div class="bar"><i style="width:${Math.min(100,saved/target*100)}%"></i></div></div>`;
+        }).join(''):empty('Поставьте общую цель: отпуск, подушка безопасности, подарок ✨')}</div>
+      </div>
+
       <div class="panel">
         <h2>📋 Последние операции</h2>
+        <div class="row" style="margin-bottom:10px"><select onchange="window._txFilter=this.value;render()" style="flex:0 0 auto">${[['all','Все'],['expense','Только расходы'],['income','Только доходы'],['me','Мои'],['partner','Партнёра']].map(([v,l])=>`<option value="${v}" ${(window._txFilter||'all')===v?'selected':''}>${l}</option>`).join('')}</select></div>
         <div class="tablewrap"><table>
           <thead><tr><th>Дата</th><th>Кто</th><th>Тип</th><th>Категория</th><th>Сумма</th><th>Заметка</th><th></th></tr></thead>
           <tbody>${txList.length?txList.map(tx=>{const who=tx.who===state.user.id?state.profile:state.partner;return `<tr>
@@ -1045,7 +1091,7 @@ function render(){
         <div><h3>⭕ Крестики-сердечки</h3>${(()=>{const g=state.game_ttt||{board:["","","","","","","","",""],wins:{}};const myId=state.user.id;const pId=state.partner?.id;const myW=(g.wins||{})[myId]||0;const pW=pId?(g.wins||{})[pId]||0:0;return `<div class="row" style="justify-content:center;margin:8px 0"><span class="pill">Счёт: ${state.profile.emoji} ${myW} : ${pW} ${state.partner?.emoji||'?'}</span></div><div class="ttt-grid">${g.board.map((v,i)=>{const isMe=v===myId;const isP=pId&&v===pId;const wId=g.winner&&g.winner!=='draw'?g.winner:null;const isW=wId&&v===wId;return `<div class="tile ${isMe?'x':isP?'o':''} ${isW?'win':''}" onclick="tttPlay(${i})">${isMe?'✕':isP?'♡':''}</div>`}).join('')}</div><div class="row" style="justify-content:center;margin-top:12px"><span class="pill">${g.winner?(g.winner==='draw'?'Ничья ✨':(g.winner===myId?'🎉 Победа!':(state.partner?.display_name||'Партнёр')+' победил!')):(g.turn===myId?'Твой ход':'Ходит партнёр')}</span><button onclick="tttReset()">🔄</button></div>`})()}</div>
         <div><h3>💌 Комплимент-рулетка</h3><div class="comp" id="compBox" style="margin:10px 0">Нажми кнопку ♡</div><button class="primary" onclick="compliment()">💜 Крутить!</button></div>
         <div><h3>🎲 Битва костей</h3><div class="row" style="justify-content:center;gap:20px;margin:16px 0"><div><div class="dice" id="diceA">${window._diceA||'?'}</div><p style="margin-top:6px;text-align:center"><b>${state.profile.emoji}</b></p></div><div><div class="dice" id="diceB">${window._diceB||'?'}</div><p style="margin-top:6px;text-align:center"><b>${state.partner?.emoji||'🤍'}</b></p></div></div><div class="row" style="justify-content:center"><button class="primary" onclick="diceRoll()">🎲 Бросить!</button></div></div>
-        <div><h3>🧠 Квиз</h3>${!quizCurrent?`<p class="muted">Проверьте знания вместе ♡</p><button class="primary" onclick="quizStart()">🎯 Начать</button>`:`<p><b>${quizCurrent.q}</b></p><div class="row" style="margin-top:12px"><input id="quizInput" type="number" placeholder="Ответ" onkeydown="if(event.key==='Enter')quizAnswer()"><button class="primary" onclick="quizAnswer()">Ответить</button></div>`}</div>
+        <div><h3>💬 Вопрос дня для двоих</h3><div class="question">${esc(talkQuestion())}</div><div class="row"><button onclick="talkNext()">↻ Другой вопрос</button><button class="max-btn" onclick="shareMax('💬 Вопрос дня: '+talkQuestion())">💬 В MAX</button></div></div>
       </div></div>`;
     }
 
@@ -1055,7 +1101,7 @@ function render(){
       const ranges={
         week:{label:'7 дней',days:7},
         month:{label:'30 дней',days:30},
-        all:{label:'Всё время',days:365}
+        all:{label:'Год',days:365}
       };
       const r=ranges[tab];
       const dates=Array.from({length:r.days},(_,i)=>{const dt=new Date(state.date+'T12:00:00');dt.setDate(dt.getDate()-(r.days-1-i));return new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,10)});
@@ -1066,7 +1112,7 @@ function render(){
       const tasksTotal=state.tasks.filter(x=>dates.includes(x.date)).length;
       const habitsDone=state.habit_marks.filter(m=>m.done&&dates.includes(m.date)).length;
       const daysWithNotes=state.days.filter(x=>dates.includes(x.date)&&x.note).length;
-      const fin=finTotals(r.days===7?'week':r.days===30?'month':'all');
+      const fin=finTotals(r.days===7?'week':r.days===30?'last30':'year');
       const waterTotal=state.days.filter(x=>dates.includes(x.date)).reduce((a,x)=>a+(Number(x.water)||0),0);
       const sleepTotal=state.days.filter(x=>dates.includes(x.date)).reduce((a,x)=>a+(Number(x.sleep)||0),0);
       const sleepAvg=state.days.filter(x=>dates.includes(x.date)&&x.sleep>0).length;
@@ -1074,7 +1120,7 @@ function render(){
       <div class="tabs">
         <button class="tab ${tab==='week'?'active':''}" onclick="state.resultsTab='week';render()">📅 7 дней</button>
         <button class="tab ${tab==='month'?'active':''}" onclick="state.resultsTab='month';render()">📆 30 дней</button>
-        <button class="tab ${tab==='all'?'active':''}" onclick="state.resultsTab='all';render()">🗓 Всё время</button>
+        <button class="tab ${tab==='all'?'active':''}" onclick="state.resultsTab='all';render()">🗓 Год</button>
       </div>
       <div class="cards">
         ${card('☀ Задачи',tasksDone+' / '+tasksTotal,'Выполнено за '+r.label,'lavender',tasksTotal?tasksDone/tasksTotal:0)}
@@ -1085,7 +1131,7 @@ function render(){
       <div class="panel" style="margin-top:22px">
         <h2>📊 Калории · ${r.label}</h2>
         <p class="muted">Нажми на столбик, чтобы увидеть детали дня</p>
-        <div class="chart">${dates.map((dt,i)=>`<div class="column" onclick="showDayDetail('${dt}')" title="Открыть ${dt}">
+        <div class="chart" style="${r.days>30?'overflow-x:auto':''}">${dates.map((dt,i)=>`<div class="column" onclick="showDayDetail('${dt}')" title="Открыть ${dt}">
           <small>${Math.round(vals[i])}</small>
           <i style="height:${vals[i]/max*110}px;animation-delay:${i*.03}s"></i>
           <small>${dt.slice(5)}</small>
@@ -1104,7 +1150,7 @@ function render(){
           <div class="detail-row"><span>Дней с победами</span><b>${daysWithNotes}</b></div>
           <div class="detail-row"><span>Серия привычек</span><b>🔥 ${streak()} дн.</b></div>
           <div class="detail-row"><span>Записей питания</span><b>${state.meals.filter(m=>dates.includes(m.date)).length}</b></div>
-          <div class="detail-row"><span>Среднее ккал/день</span><b>${Math.round(vals.reduce((a,b)=>a+b,0)/r.days)}</b></div>
+          <div class="detail-row"><span>Среднее ккал/день</span><b>${(()=>{const f=vals.filter(v=>v>0);return f.length?Math.round(f.reduce((a,b)=>a+b,0)/f.length):'—'})()}</b></div>
         </div>
       </div>
       <div class="panel">
@@ -1160,7 +1206,7 @@ function render(){
       const fontsHead=['Cormorant Garamond','Playfair Display','Lora','Georgia'];
       const fontsHand=['Caveat','Pacifico','Marck Script'];
       const c=state.custom;
-      const todayR=state.reminders.filter(r=>!r.done&&((r.recurring==='none'&&r.date===state.date)||r.recurring==='daily'));
+      const allR=state.reminders.filter(r=>!r.done&&(r.recurring==='daily'||r.date>=todayStr())).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
       const maxUser=localStorage.getItem('mr-max-user-'+state.user.id)||'';
       const maxPhone=localStorage.getItem('mr-max-phone-'+state.user.id)||'';
       out=`<div class="panel lavender"><h2>Настройки ⚙</h2></div>
@@ -1190,20 +1236,21 @@ function render(){
       <div class="panel"><h2>🎯 Цели питания и воды</h2><div class="formgrid">${Object.entries({k:'Калории, ккал',p:'Белки, г',f:'Жиры, г',c:'Углеводы, г',water:'Вода, мл',glass:'Стакан, мл'}).map(([k,l])=>`<label>${l}<input type="number" min="1" value="${state.goals[k]}" onchange="saveGoal('${k}',Math.max(1,Number(this.value)||1))"></label>`).join('')}</div></div>
       <div class="panel"><h2>🔔 Напоминания и MAX</h2>
         <div class="row"><input id="remText" placeholder="О чём напомнить?"><input id="remTime" type="time" style="flex:0 0 130px"><input id="remDate" type="date" style="flex:0 0 150px" value="${state.date}"><select id="remRec" style="flex:0 0 130px"><option value="none">Один раз</option><option value="daily">Каждый день</option></select><button class="primary" onclick="addReminder()">+</button></div>
-        ${todayR.length?`<h3 style="margin-top:18px">Сегодня</h3>${todayR.map(r=>`<div class="item"><span style="font-size:20px">🔔</span><span><b>${esc(r.text)}</b><br><small class="muted">${r.time} · ${r.recurring==='daily'?'ежедневно':r.date}</small></span><button class="delete" onclick="delReminder('${r.id}')">×</button></div>`).join('')}`:''}
+        ${allR.length?`<h3 style="margin-top:18px">Мои напоминания</h3>${allR.map(r=>`<div class="item"><span style="font-size:20px">🔔</span><span><b>${esc(r.text)}</b><br><small class="muted">${String(r.time||'').slice(0,5)} · ${r.recurring==='daily'?'ежедневно':r.date}</small></span><button class="delete" onclick="delReminder('${r.id}')">×</button></div>`).join('')}`:''}
+        <p class="muted" style="margin-top:10px">Напоминания срабатывают, пока приложение открыто. Включи уведомления браузера, чтобы видеть их поверх других вкладок.</p>
         <h3 style="margin-top:18px">MAX мессенджер</h3>
         <div class="row"><input id="maxUsername" placeholder="@username" value="${esc(maxUser)}" onchange="localStorage.setItem('mr-max-user-${state.user.id}',this.value);toast('💜 Сохранено')"><input id="maxPhone" placeholder="+7..." value="${esc(maxPhone)}" onchange="localStorage.setItem('mr-max-phone-${state.user.id}',this.value);toast('💜 Сохранено')"></div>
         <div class="row" style="margin-top:10px"><button class="max-btn" onclick="sendDailySummary()">💬 Отправить сводку</button><button class="max-btn" onclick="sendLove()">💜 Отправить любовь</button><button onclick="requestNotifPerm()">🔔 Уведомления браузера</button></div>
       </div>
-      <div class="panel"><h2>🎉 Настроение</h2><div class="row"><button onclick="toggleTheme()">${state.theme==='dark'?'☀ Светлая тема':'🌙 Тёмная тема'}</button><button onclick="confetti()">🎉 Конфетти</button><button onclick="heartRain()">💜 Дождь из сердечек</button></div></div>
-      <div class="panel" style="background:linear-gradient(145deg,#ffe0e0,#ffd0d0)"><h2>Опасная зона</h2><button class="danger" onclick="deleteAccount()">Удалить мой аккаунт</button></div>`;
+      <div class="panel"><h2>🌗 Оформление</h2><div class="row"><button onclick="toggleTheme();render()">${state.theme==='dark'?'☀ Светлая тема':'🌙 Тёмная тема'}</button><button onclick="toggleAnim()">${state.anim?'✨ Выключить летающие сердечки':'✨ Включить летающие сердечки'}</button></div><p class="muted" style="margin-top:8px">Без анимации приложение быстрее работает на телефоне и меньше тратит батарею.</p></div>
+      <div class="panel danger-zone"><h2>Опасная зона</h2><button class="danger" onclick="deleteAccount()">Удалить мой аккаунт</button></div>`;
     }
 
     $('view').innerHTML=out;
     if(state.page==='finance')refreshTxCategories();
   }catch(e){
     console.error('RENDER ERROR:',e);
-    $('view').innerHTML=`<div class="panel" style="background:#ffe0e0;color:#a23a3a"><h2>Ошибка отрисовки</h2><p>${esc(e.message)}</p></div>`;
+    $('view').innerHTML=`<div class="panel err-panel"><h2>Ошибка отрисовки</h2><p>${esc(e.message)}</p></div>`;
   }
 }
 
@@ -1214,6 +1261,8 @@ function refreshTxCategories(){
   sel.innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
 }
 
+function shiftDate(n){state.date=addDays(state.date,n);render()}
+function goToday(){state.date=todayStr();render()}
 /* ============ ДЕТАЛИЗАЦИЯ ДНЯ ============ */
 function showDayDetail(dt){
   const dd=dayAt(dt);
@@ -1248,8 +1297,9 @@ function showDayDetail(dt){
 
 /* ============ ИНИЦИАЛИЗАЦИЯ ============ */
 async function init(){
-  console.log('🚀 Мой Ритм v8.0');
+  console.log('🚀 Мой Ритм v9.0');
   applyTheme();
+  document.body.classList.toggle('no-anim',!state.anim);
   spawnHearts();
   spawnStars();
   const dateInput=$('date');
